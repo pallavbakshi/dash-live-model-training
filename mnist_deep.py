@@ -32,6 +32,7 @@ import sys
 import tempfile
 import os
 
+import time
 from tensorflow.examples.tutorials.mnist import input_data
 
 import tensorflow as tf
@@ -39,8 +40,8 @@ import tensorflow as tf
 FLAGS = None
 
 
-if os.path.exists("eggs.csv"):
-    os.remove("eggs.csv")
+if os.path.exists("run_log.csv"):
+    os.remove("run_log.csv")
 
 def deepnn(x):
   """deepnn builds the graph for a deep net for classifying digits.
@@ -169,21 +170,36 @@ def main(_):
       batch = mnist.train.next_batch(50)
       batch_val = mnist.validation.next_batch(50)
 
-      train_accuracy = accuracy.eval(feed_dict={
-        x: batch[0], y_: batch[1], keep_prob: 1.0})
-      val_accuracy = accuracy.eval(feed_dict={
-        x: batch_val[0], y_: batch_val[1], keep_prob: 1.0})
 
-      if i%100 == 0:
-        print('step %d, training accuracy %g' % (i, train_accuracy))
-
-      if i%5 == 0:
-        # Write CSV
-        with open('eggs.csv', 'a', newline='') as csvfile:
-          accuracy_writer = csv.writer(csvfile, delimiter=',')
-          accuracy_writer.writerow([i, train_accuracy, val_accuracy])
-
+      t3 = time.time()
       train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+      t4 = time.time()
+
+      if i % 5 == 0 and i > 0:
+        t1 = time.time()
+        train_accuracy = accuracy.eval(feed_dict={
+          x: batch[0], y_: batch[1], keep_prob: 1.0})
+        val_accuracy = accuracy.eval(feed_dict={
+          x: batch_val[0], y_: batch_val[1], keep_prob: 1.0})
+
+        train_cross_entropy = cross_entropy.eval(feed_dict={
+          x: batch[0], y_: batch[1], keep_prob: 1.0})
+        val_cross_entropy = cross_entropy.eval(feed_dict={
+          x: batch_val[0], y_: batch_val[1], keep_prob: 1.0})
+        t2 = time.time()
+
+        # Write CSV
+        with open('run_log.csv', 'a', newline='') as file:
+          writer = csv.writer(file, delimiter=',')
+          writer.writerow([i, train_accuracy, val_accuracy, train_cross_entropy, val_cross_entropy])
+
+        if i % 100 == 0:
+          print('step %d, training accuracy %g' % (i, train_accuracy))
+          # print(f'cross-entropy: {train_cross_entropy:.3f}, {val_cross_entropy:.3f}')
+          print(f'Time taken for evaluation: {t2-t1:.4} sec')
+          print(f'Time taken for training step: {t4-t3:.4f} sec\n')
+
+
 
     print('test accuracy %g' % accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))

@@ -1,3 +1,4 @@
+import time
 from scipy.interpolate import interp1d
 from scipy.interpolate import spline
 import plotly.graph_objs as go
@@ -38,12 +39,14 @@ app.layout = html.Div([
     html.Div([
         dcc.Interval(
             id="interval-component",
-            interval=1000,
+            interval=500,
             n_intervals=0
         ),
 
+        html.Div(id='run-log-storage', style={'display': 'none'}),
+
         dcc.Graph(
-            id="accuracy-curve"
+            id="accuracy-graph"
         ),
 
 
@@ -66,54 +69,74 @@ def smooth(scalars, weight=0.6):  # Weight between 0 and 1
 
     return smoothed
 
-@app.server.before_first_request
-def load_csv():
-    global csv_reader, step, train_error, val_error
-
-    csvfile = open('eggs.csv', 'r', newline='')
-    csv_reader = csv.reader(csvfile, delimiter=',')
-    step = []
-    train_error = []
-    val_error = []
-
-
+# @app.server.before_first_request
+# def load_csv():
+#     global csv_reader, step, train_error, val_error
+#
+#     csvfile = open('run_log.csv', 'r', newline='')
+#     csv_reader = csv.reader(csvfile, delimiter=',')
+#     step = []
+#     train_error = []
+#     val_error = []
 
 
-@app.callback(Output('accuracy-curve', 'figure'),
+@app.callback(Output('run-log-storage', 'children'),
               [Input('interval-component', 'n_intervals')])
-def update_accuracy_curve(n_intervals):
+def get_run_log(n_intervals):
+    t1 = time.time()
 
-    if n_intervals > 0:
-        layout = go.Layout(
-            title="Model Accuracy",
-            margin=go.Margin(l=50, r=50, b=50, t=50)
-        )
+    names = ['step', 'train accuracy', 'val accuracy', 'train cross entropy', 'val cross entropy']
+    run_log_df = pd.read_csv('run_log.csv', names=names)
+    json = run_log_df.to_json(orient='split')
 
-        for row in csv_reader:
-            step.append(int(row[0]))
-            train_error.append(float(row[1]))
-            val_error.append(float(row[2]))
+    t2 = time.time()
+    print(f"\ncsv2json time: {t2-t1:.3f} sec")
 
-        trace_train = go.Scatter(
-            x=step,
-            y=train_error,
-            mode='lines',
-            name='Training'
-        )
+    return json
 
-        trace_val = go.Scatter(
-            x=step,
-            y=smooth(val_error, 0.7),
-            mode='lines',
-            name='Validation'
-        )
 
-        return go.Figure(
-            data=[trace_train, trace_val],
-            layout=layout
-        )
+@app.callback(Output('accuracy-graph', 'figure'),
+              [Input('run-log-storage', 'children')])
+def update_accuracy_curve(run_log_json):
+    t1 = time.time()
+    run_log_df = pd.read_json(run_log_json, orient='split')
+    t2 = time.time()
+    print(f"json2csv time: {t2-t1:.3f} sec\n")
 
-    return go.Figure(go.Scatter(visible=False))
+    layout = go.Layout(
+        title="Prediction Accuracy",
+        margin=go.Margin(l=50, r=50, b=50, t=50)
+    )
+
+    # for row in csv_reader:
+    #     step.append(int(row[0]))
+    #     train_error.append(float(row[1]))
+    #     val_error.append(float(row[2]))
+
+    step = run_log_df['step']
+    train_accuracy = run_log_df['train accuracy']
+    val_accuracy = run_log_df['val accuracy']
+
+    trace_train = go.Scatter(
+        x=step,
+        y=train_accuracy,
+        mode='lines',
+        name='Training'
+    )
+
+    trace_val = go.Scatter(
+        x=step,
+        y=smooth(val_accuracy),
+        mode='lines',
+        name='Validation'
+    )
+
+    return go.Figure(
+        data=[trace_train, trace_val],
+        layout=layout
+    )
+
+    # return go.Figure(go.Scatter(visible=False))
 
 
 external_css = [
