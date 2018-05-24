@@ -138,13 +138,13 @@ def main(_):
   mnist = input_data.read_data_sets(FLAGS.data_dir)
 
   # Create the model
-  x = tf.placeholder(tf.float32, [None, 784])
+  x = tf.placeholder(tf.float32, [None, 784])  # X
 
   # Define loss and optimizer
-  y_ = tf.placeholder(tf.int64, [None])
+  y_ = tf.placeholder(tf.int64, [None])  # y True
 
   # Build the graph for the deep net
-  y_conv, keep_prob = deepnn(x)
+  y_conv, keep_prob = deepnn(x)  # y predicted
 
   with tf.name_scope('loss'):
     cross_entropy = tf.losses.sparse_softmax_cross_entropy(
@@ -156,7 +156,7 @@ def main(_):
 
   with tf.name_scope('accuracy'):
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), y_)
-    correct_prediction = tf.cast(correct_prediction, tf.float32)
+    correct_prediction = tf.cast(correct_prediction, tf.float64)
   accuracy = tf.reduce_mean(correct_prediction)
 
   graph_location = tempfile.mkdtemp()
@@ -170,13 +170,14 @@ def main(_):
       batch = mnist.train.next_batch(50)
       batch_val = mnist.validation.next_batch(50)
 
-
       t3 = time.time()
       train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
       t4 = time.time()
 
+      ############################ ADDITIONAL CODE ############################
       if i % 5 == 0 and i > 0:
         t1 = time.time()
+
         train_accuracy = accuracy.eval(feed_dict={
           x: batch[0], y_: batch[1], keep_prob: 1.0})
         val_accuracy = accuracy.eval(feed_dict={
@@ -192,6 +193,8 @@ def main(_):
         with open('run_log.csv', 'a', newline='') as file:
           writer = csv.writer(file, delimiter=',')
           writer.writerow([i, train_accuracy, val_accuracy, train_cross_entropy, val_cross_entropy])
+
+        ############################ END ############################
 
         if i % 100 == 0:
           print('step %d, training accuracy %g' % (i, train_accuracy))
