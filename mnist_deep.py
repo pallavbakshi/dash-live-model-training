@@ -39,10 +39,6 @@ import tensorflow as tf
 
 FLAGS = None
 
-
-if os.path.exists("run_log.csv"):
-    os.remove("run_log.csv")
-
 def deepnn(x):
   """deepnn builds the graph for a deep net for classifying digits.
 
@@ -130,9 +126,6 @@ def bias_variable(shape):
 
 
 def main(_):
-  # Open csv file
-  csvfile = open('eggs.csv', 'a', newline='')
-  csvwriter = csv.writer(csvfile, delimiter=',')
 
   # Import data
   mnist = input_data.read_data_sets(FLAGS.data_dir)
@@ -163,6 +156,9 @@ def main(_):
   print('Saving graph to: %s' % graph_location)
   train_writer = tf.summary.FileWriter(graph_location)
   train_writer.add_graph(tf.get_default_graph())
+
+  if os.path.exists("run_log.csv"):
+    os.remove("run_log.csv")
 
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
@@ -198,7 +194,6 @@ def main(_):
 
         if i % 100 == 0:
           print('step %d, training accuracy %g' % (i, train_accuracy))
-          # print(f'cross-entropy: {train_cross_entropy:.3f}, {val_cross_entropy:.3f}')
           print(f'Time taken for evaluation: {t2-t1:.4} sec')
           print(f'Time taken for training step: {t4-t3:.4f} sec\n')
 
@@ -207,7 +202,6 @@ def main(_):
     print('test accuracy %g' % accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
 
-  csvfile.close()
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
