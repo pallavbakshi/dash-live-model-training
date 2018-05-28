@@ -33,7 +33,7 @@ def div_graph(name):
 
         html.Div([
             html.Div([
-                "Smoothing:",
+                html.P("Smoothing:", style={'font-weight': 'bold', 'margin-bottom': '0px'}),
 
                 dcc.Checklist(
                     options=[
@@ -61,7 +61,7 @@ def div_graph(name):
             ),
 
             html.Div([
-                "Display mode:",
+                html.P("Display mode:", style={'font-weight': 'bold', 'margin-bottom': '0px'}),
 
                 dcc.RadioItems(
                     options=[
