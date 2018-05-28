@@ -16,7 +16,15 @@ app = dash.Dash(__name__)
 server = app.server
 
 
+# Custom Script for Heroku
+if 'DYNO' in os.environ:
+    app.scripts.append_script({
+        'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
+    })
+
+
 def div_graph(name):
+    """Generates an html Div containing graph and control options for smoothing and display, given the name"""
     return html.Div([
         html.Div(
             id=f'div-{name}-graph',
@@ -71,11 +79,6 @@ def div_graph(name):
         className="row"
     )
 
-# Custom Script for Heroku
-if 'DYNO' in os.environ:
-    app.scripts.append_script({
-        'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
-    })
 
 app.layout = html.Div([
     # Banner display
@@ -93,73 +96,98 @@ app.layout = html.Div([
 
     # Body
     html.Div([
+        html.Div([
+            dcc.Dropdown(
+                id='dropdown-interval-control',
+                options=[
+                    {'label': 'No Updates', 'value': 'no'},
+                    {'label': 'Slow Updates', 'value': 'slow'},
+                    {'label': 'Regular Updates', 'value': 'regular'},
+                    {'label': 'Fast Updates', 'value': 'fast'}
+                ],
+                value='regular',
+                clearable=False,
+                searchable=False
+            )
+        ],
+            id='div-interval-control',
+            className='row'
+        ),
+
         dcc.Interval(
             id="interval-log-update",
-            interval=50000,
             n_intervals=0
         ),
 
+        # Hidden Div Storing JSON-serialized dataframe of run log
         html.Div(id='run-log-storage', style={'display': 'none'}),
 
+        # The html divs storing the graphs and display parameters
         div_graph('accuracy'),
-
-        dcc.Graph(id="cross-entropy-graph"),
-
+        div_graph('cross-entropy')
     ],
         className="container"
     )
 ])
 
 
-def smooth(scalars, weight=0.6):  # Weight between 0 and 1
-    last = scalars[0]  # First value in the plot (first timestep)
-    smoothed = list()
-    for point in scalars:
-        smoothed_val = last * weight + (1 - weight) * point  # Calculate smoothed value
-        smoothed.append(smoothed_val)  # Save it
-        last = smoothed_val  # Anchor the last smoothed value
-
-    return smoothed
-
-
 def update_graph(graph_id,
                  graph_title,
+                 y_train_index,
+                 y_val_index,
                  run_log_json,
                  display_mode,
                  checklist_smoothing_options,
                  slider_smoothing):
+    """
+    :param graph_id: ID for Dash callbacks
+    :param graph_title: Displayed on layout
+    :param y_train_index: name of column index for y train we want to retrieve
+    :param y_val_index: name of column index for y val we want to retrieve
+    :param run_log_json: the json file containing the data
+    :param display_mode: 'separate' or 'overlap'
+    :param checklist_smoothing_options: 'train' or 'val'
+    :param slider_smoothing: value between 0 and 1, at interval of 0.05
+    :return: dcc Graph object containing the updated figures
+    """
+    def smooth(scalars, weight=0.6):  # Weight between 0 and 1
+        last = scalars[0]  # First value in the plot (first timestep)
+        smoothed = list()
+        for point in scalars:
+            smoothed_val = last * weight + (1 - weight) * point  # Calculate smoothed value
+            smoothed.append(smoothed_val)  # Save it
+            last = smoothed_val  # Anchor the last smoothed value
+        return smoothed
+
     if run_log_json:  # exists
         layout = go.Layout(
             title=graph_title,
             margin=go.Margin(l=50, r=50, b=50, t=50)
         )
 
-        t1 = time.time()
         run_log_df = pd.read_json(run_log_json, orient='split')
-        t2 = time.time()
-        print(f"json2csv time: {t2-t1:.3f} sec\n")
 
         step = run_log_df['step']
-        train_accuracy = run_log_df['train accuracy']
-        val_accuracy = run_log_df['val accuracy']
+        y_train = run_log_df[y_train_index]
+        y_val = run_log_df[y_val_index]
 
         # Apply Smoothing if needed
         if 'train' in checklist_smoothing_options:
-            train_accuracy = smooth(train_accuracy, weight=slider_smoothing)
+            y_train = smooth(y_train, weight=slider_smoothing)
 
         if 'val' in checklist_smoothing_options:
-            val_accuracy = smooth(val_accuracy, weight=slider_smoothing)
+            y_val = smooth(y_val, weight=slider_smoothing)
 
         trace_train = go.Scatter(
             x=step,
-            y=train_accuracy,
+            y=y_train,
             mode='lines',
             name='Training'
         )
 
         trace_val = go.Scatter(
             x=step,
-            y=val_accuracy,
+            y=y_val,
             mode='lines',
             name='Validation'
         )
@@ -188,11 +216,22 @@ def update_graph(graph_id,
     return dcc.Graph(id=graph_id)
 
 
+@app.callback(Output('interval-log-update', 'interval'),
+              [Input('dropdown-interval-control', 'value')])
+def update_interval_log_update(interval_rate):
+    if interval_rate == 'fast':
+        return 500
+
+    elif interval_rate == 'regular':
+        return 1000
+
+    elif interval_rate == 'slow':
+        return 5000
+
+
 @app.callback(Output('run-log-storage', 'children'),
               [Input('interval-log-update', 'n_intervals')])
 def get_run_log(n_intervals):
-    t1 = time.time()
-
     names = ['step', 'train accuracy', 'val accuracy', 'train cross entropy', 'val cross entropy']
 
     try:
@@ -202,9 +241,6 @@ def get_run_log(n_intervals):
         print(error + ". Please verify if the csv file generated by your model is place in the correct directory.")
         return None
 
-    t2 = time.time()
-    print(f"\ncsv2json time: {t2-t1:.3f} sec")
-
     return json
 
 
@@ -213,52 +249,39 @@ def get_run_log(n_intervals):
                Input('radio-display-mode-accuracy', 'value'),
                Input('checklist-smoothing-options-accuracy', 'values'),
                Input('slider-smoothing-accuracy', 'value')])
-def update_accuracy_graph(run_log_json, display_mode, checklist_smoothing_options, slider_smoothing):
+def update_accuracy_graph(run_log_json,
+                          display_mode,
+                          checklist_smoothing_options,
+                          slider_smoothing):
     figure = update_graph('accuracy-graph',
                           'Prediction Accuracy',
+                          'train accuracy',
+                          'val accuracy',
                           run_log_json,
                           display_mode,
                           checklist_smoothing_options,
                           slider_smoothing)
-
     return [figure]
 
 
-@app.callback(Output('cross-entropy-graph', 'figure'),
-              [Input('run-log-storage', 'children')])
-def update_cross_entropy_graph(run_log_json):
-    if run_log_json:
-        run_log_df = pd.read_json(run_log_json, orient='split')
-
-        layout = go.Layout(
-            title="Cross Entropy Loss",
-            margin=go.Margin(l=50, r=50, b=50, t=50)
-        )
-
-        step = run_log_df['step']
-        train_accuracy = run_log_df['train cross entropy']
-        val_accuracy = run_log_df['val cross entropy']
-
-        trace_train = go.Scatter(
-            x=step,
-            y=train_accuracy,
-            mode='lines',
-            name='Training'
-        )
-
-        trace_val = go.Scatter(
-            x=step,
-            y=val_accuracy,
-            mode='lines',
-            name='Validation'
-        )
-
-        return go.Figure(
-            data=[trace_train, trace_val],
-            layout=layout
-        )
-
-    return go.Figure(go.Scatter(visible=False))
+@app.callback(Output('div-cross-entropy-graph', 'children'),
+              [Input('run-log-storage', 'children'),
+               Input('radio-display-mode-cross-entropy', 'value'),
+               Input('checklist-smoothing-options-cross-entropy', 'values'),
+               Input('slider-smoothing-cross-entropy', 'value')])
+def update_cross_entropy_graph(run_log_json,
+                               display_mode,
+                               checklist_smoothing_options,
+                               slider_smoothing):
+    figure = update_graph('cross-entropy-graph',
+                          'Cross Entropy Loss',
+                          'train cross entropy',
+                          'val cross entropy',
+                          run_log_json,
+                          display_mode,
+                          checklist_smoothing_options,
+                          slider_smoothing)
+    return [figure]
 
 
 external_css = [
