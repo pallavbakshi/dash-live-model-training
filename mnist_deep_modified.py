@@ -27,17 +27,17 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import csv
 import sys
-import tempfile
-import os
 
-import time
 from tensorflow.examples.tutorials.mnist import input_data
 
 import tensorflow as tf
 
+# Modified Import
+from tfutils import add_eval, write_data
+
 FLAGS = None
+
 
 def deepnn(x):
   """deepnn builds the graph for a deep net for classifying digits.
@@ -55,50 +55,42 @@ def deepnn(x):
   # Reshape to use within a convolutional neural net.
   # Last dimension is for "features" - there is only one here, since images are
   # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
-  with tf.name_scope('reshape'):
-    x_image = tf.reshape(x, [-1, 28, 28, 1])
+  x_image = tf.reshape(x, [-1, 28, 28, 1])
 
   # First convolutional layer - maps one grayscale image to 32 feature maps.
-  with tf.name_scope('conv1'):
-    W_conv1 = weight_variable([5, 5, 1, 32])
-    b_conv1 = bias_variable([32])
-    h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
+  W_conv1 = weight_variable([5, 5, 1, 32])
+  b_conv1 = bias_variable([32])
+  h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 
   # Pooling layer - downsamples by 2X.
-  with tf.name_scope('pool1'):
-    h_pool1 = max_pool_2x2(h_conv1)
+  h_pool1 = max_pool_2x2(h_conv1)
 
   # Second convolutional layer -- maps 32 feature maps to 64.
-  with tf.name_scope('conv2'):
-    W_conv2 = weight_variable([5, 5, 32, 64])
-    b_conv2 = bias_variable([64])
-    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+  W_conv2 = weight_variable([5, 5, 32, 64])
+  b_conv2 = bias_variable([64])
+  h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
   # Second pooling layer.
-  with tf.name_scope('pool2'):
-    h_pool2 = max_pool_2x2(h_conv2)
+  h_pool2 = max_pool_2x2(h_conv2)
 
   # Fully connected layer 1 -- after 2 round of downsampling, our 28x28 image
   # is down to 7x7x64 feature maps -- maps this to 1024 features.
-  with tf.name_scope('fc1'):
-    W_fc1 = weight_variable([7 * 7 * 64, 1024])
-    b_fc1 = bias_variable([1024])
+  W_fc1 = weight_variable([7 * 7 * 64, 1024])
+  b_fc1 = bias_variable([1024])
 
-    h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+  h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
+  h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
   # Dropout - controls the complexity of the model, prevents co-adaptation of
   # features.
-  with tf.name_scope('dropout'):
-    keep_prob = tf.placeholder(tf.float32)
-    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+  keep_prob = tf.placeholder(tf.float32)
+  h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
   # Map the 1024 features to 10 classes, one for each digit
-  with tf.name_scope('fc2'):
-    W_fc2 = weight_variable([1024, 10])
-    b_fc2 = bias_variable([10])
+  W_fc2 = weight_variable([1024, 10])
+  b_fc2 = bias_variable([10])
 
-    y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+  y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
   return y_conv, keep_prob
 
 
@@ -126,82 +118,51 @@ def bias_variable(shape):
 
 
 def main(_):
-
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir)
+  mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
   # Create the model
-  x = tf.placeholder(tf.float32, [None, 784])  # X
+  x = tf.placeholder(tf.float32, [None, 784])
 
   # Define loss and optimizer
-  y_ = tf.placeholder(tf.int64, [None])  # y True
+  y_ = tf.placeholder(tf.float32, [None, 10])
 
   # Build the graph for the deep net
-  y_conv, keep_prob = deepnn(x)  # y predicted
+  y_conv, keep_prob = deepnn(x)
 
-  with tf.name_scope('loss'):
-    cross_entropy = tf.losses.sparse_softmax_cross_entropy(
-        labels=y_, logits=y_conv)
-  cross_entropy = tf.reduce_mean(cross_entropy)
-
-  with tf.name_scope('adam_optimizer'):
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-
-  with tf.name_scope('accuracy'):
-    correct_prediction = tf.equal(tf.argmax(y_conv, 1), y_)
-    correct_prediction = tf.cast(correct_prediction, tf.float64)
-  accuracy = tf.reduce_mean(correct_prediction)
-
-  graph_location = tempfile.mkdtemp()
-  print('Saving graph to: %s' % graph_location)
-  train_writer = tf.summary.FileWriter(graph_location)
-  train_writer.add_graph(tf.get_default_graph())
-
-  if os.path.exists("run_log.csv"):
-    os.remove("run_log.csv")
+  cross_entropy = tf.reduce_mean(
+      tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
+  train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+  correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
+  accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     for i in range(20000):
       batch = mnist.train.next_batch(50)
+
+      ################################## MODIFIED CODE BELOW ##################################
       batch_val = mnist.validation.next_batch(50)
+      feed_dict_train = {x: batch[0], y_: batch[1], keep_prob: 1.0}
+      feed_dict_val = {x: batch_val[0], y_: batch_val[1], keep_prob: 1.0}
+      # Writes data into run log csv file
+      write_data(
+        accuracy=accuracy,
+        cross_entropy=cross_entropy,
+        feed_dict_train=feed_dict_train,
+        feed_dict_val=feed_dict_val,
+        step=i
+      )
+      ################################## MODIFIED CODE ABOVE ##################################
 
-      t3 = time.time()
-      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
-      t4 = time.time()
-
-      ############################ ADDITIONAL CODE ############################
-      if i % 5 == 0 and i > 0:
-        t1 = time.time()
-
+      if i % 100 == 0:
         train_accuracy = accuracy.eval(feed_dict={
-          x: batch[0], y_: batch[1], keep_prob: 1.0})
-        val_accuracy = accuracy.eval(feed_dict={
-          x: batch_val[0], y_: batch_val[1], keep_prob: 1.0})
-
-        train_cross_entropy = cross_entropy.eval(feed_dict={
-          x: batch[0], y_: batch[1], keep_prob: 1.0})
-        val_cross_entropy = cross_entropy.eval(feed_dict={
-          x: batch_val[0], y_: batch_val[1], keep_prob: 1.0})
-        t2 = time.time()
-
-        # Write CSV
-        with open('run_log.csv', 'a', newline='') as file:
-          writer = csv.writer(file, delimiter=',')
-          writer.writerow([i, train_accuracy, val_accuracy, train_cross_entropy, val_cross_entropy])
-
-        ############################ END ############################
-
-        if i % 100 == 0:
-          print('step %d, training accuracy %g' % (i, train_accuracy))
-          print(f'Time taken for evaluation: {t2-t1:.4} sec')
-          print(f'Time taken for training step: {t4-t3:.4f} sec\n')
-
-
+            x: batch[0], y_: batch[1], keep_prob: 1.0})
+        print('step %d, training accuracy %g' % (i, train_accuracy))
+      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
     print('test accuracy %g' % accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
-
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
