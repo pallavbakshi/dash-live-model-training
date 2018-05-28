@@ -84,7 +84,7 @@ app.layout = html.Div([
     # Banner display
     html.Div([
         html.H2(
-            'App Name',
+            'Live Model Training Viewer',
             id='title'
         ),
         html.Img(
@@ -193,7 +193,7 @@ def update_graph(graph_id,
         )
 
         if display_mode == 'separate':
-            figure = tools.make_subplots(rows=2, cols=1)
+            figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
 
             figure.append_trace(trace_train, 1, 1)
             figure.append_trace(trace_val, 2, 1)
