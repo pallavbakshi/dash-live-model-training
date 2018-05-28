@@ -15,12 +15,67 @@ import dash_html_components as html
 app = dash.Dash(__name__)
 server = app.server
 
+
+def div_graph(name):
+    return html.Div([
+        html.Div(
+            id=f'div-{name}-graph',
+            className="ten columns"
+        ),
+
+        html.Div([
+            html.Div([
+                "Smoothing:",
+
+                dcc.Checklist(
+                    options=[
+                        {'label': 'Training', 'value': 'train'},
+                        {'label': 'Validation', 'value': 'val'}
+                    ],
+                    values=[],
+                    id=f'checklist-smoothing-options-{name}'
+                )
+            ],
+                style={'margin-top': '10px'}
+            ),
+
+            html.Div([
+                dcc.Slider(
+                    min=0,
+                    max=1,
+                    step=0.05,
+                    marks={i / 5: i / 5 for i in range(0, 6)},
+                    value=0.6,
+                    id=f'slider-smoothing-{name}'
+                )
+            ],
+                style={'margin-bottom': '40px'}
+            ),
+
+            html.Div([
+                "Display mode:",
+
+                dcc.RadioItems(
+                    options=[
+                        {'label': 'Overlapping Plots', 'value': 'overlap'},
+                        {'label': 'Separate Plots', 'value': 'separate'}
+                    ],
+                    value='overlap',
+                    id=f'radio-display-mode-{name}'
+                )
+            ]),
+        ],
+            className="two columns"
+        ),
+    ],
+        className="row"
+    )
+
 # Custom Script for Heroku
 if 'DYNO' in os.environ:
     app.scripts.append_script({
         'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
     })
-
 
 app.layout = html.Div([
     # Banner display
@@ -39,73 +94,19 @@ app.layout = html.Div([
     # Body
     html.Div([
         dcc.Interval(
-            id="interval-component",
+            id="interval-log-update",
             interval=50000,
             n_intervals=0
         ),
 
-        html.Div([
-            html.Div([
-                "Smoothing:",
-
-            dcc.Checklist(
-                options=[
-                    {'label': 'Training', 'value': 'train'},
-                    {'label': 'Validation', 'value': 'val'}
-                ],
-                style={'display': 'inline-block', 'margin-left': '15px'},
-                labelStyle={'display': 'inline-block', 'margin-right': '10px'},
-                values=[],
-                id='checklist-smoothing-options'
-            )
-            ],
-                className="three columns"
-            ),
-
-            html.Div([
-                dcc.Slider(
-                    min=0,
-                    max=1,
-                    step=0.01,
-                    marks={i/5: i/5 for i in range(0, 20)},
-                    value=0.6,
-                    id='slider-smoothing'
-                )
-            ],
-                className="nine columns"
-            )
-        ],
-            className="row",
-            style={
-                'margin-bottom': '30px'
-            }
-        ),
-
-        html.Div([
-            "Display mode:",
-
-            dcc.RadioItems(
-                options=[
-                    {'label': 'Overlapping Plots', 'value': 'overlap'},
-                    {'label': 'Separate Plots', 'value': 'separate'}
-                ],
-                value='overlap',
-                style={'display': 'inline-block', 'margin-left': '15px'},
-                labelStyle={'display': 'inline-block', 'margin-right': '10px'},
-                id='radio-display-mode'
-            )
-        ],
-            className="row"
-        ),
-
         html.Div(id='run-log-storage', style={'display': 'none'}),
 
-        html.Div(id='div-accuracy-graph'),
+        div_graph('accuracy'),
 
         dcc.Graph(id="cross-entropy-graph"),
 
     ],
-        className="container",
+        className="container"
     )
 ])
 
@@ -115,42 +116,21 @@ def smooth(scalars, weight=0.6):  # Weight between 0 and 1
     smoothed = list()
     for point in scalars:
         smoothed_val = last * weight + (1 - weight) * point  # Calculate smoothed value
-        smoothed.append(smoothed_val)                        # Save it
-        last = smoothed_val                                  # Anchor the last smoothed value
+        smoothed.append(smoothed_val)  # Save it
+        last = smoothed_val  # Anchor the last smoothed value
 
     return smoothed
 
 
-@app.callback(Output('run-log-storage', 'children'),
-              [Input('interval-component', 'n_intervals')])
-def get_run_log(n_intervals):
-
-    t1 = time.time()
-
-    names = ['step', 'train accuracy', 'val accuracy', 'train cross entropy', 'val cross entropy']
-
-    try:
-        run_log_df = pd.read_csv('run_log.csv', names=names)
-        json = run_log_df.to_json(orient='split')
-    except FileNotFoundError as error:
-        print(error + ". Please verify if the csv file generated by your model is place in the correct directory.")
-        return None
-
-    t2 = time.time()
-    print(f"\ncsv2json time: {t2-t1:.3f} sec")
-
-    return json
-
-
-@app.callback(Output('div-accuracy-graph', 'children'),
-              [Input('run-log-storage', 'children'),
-               Input('radio-display-mode', 'value'),
-               Input('checklist-smoothing-options', 'values'),
-               Input('slider-smoothing', 'value')])
-def update_accuracy_graph(run_log_json, display_mode, checklist_smoothing_options, slider_smoothing):
+def update_graph(graph_id,
+                 graph_title,
+                 run_log_json,
+                 display_mode,
+                 checklist_smoothing_options,
+                 slider_smoothing):
     if run_log_json:  # exists
         layout = go.Layout(
-            title="Prediction Accuracy",
+            title=graph_title,
             margin=go.Margin(l=50, r=50, b=50, t=50)
         )
 
@@ -184,29 +164,64 @@ def update_accuracy_graph(run_log_json, display_mode, checklist_smoothing_option
             name='Validation'
         )
 
-        if display_mode == 'overlap':
+        if display_mode == 'separate':
+            figure = tools.make_subplots(rows=2, cols=1)
+
+            figure.append_trace(trace_train, 1, 1)
+            figure.append_trace(trace_val, 2, 1)
+
+            figure['layout'].update(title=layout.title,
+                                    margin=layout.margin,
+                                    height=layout.height)
+
+        elif display_mode == 'overlap':
             figure = go.Figure(
                 data=[trace_train, trace_val],
                 layout=layout
             )
 
-        elif display_mode == 'separate':
-            figure = tools.make_subplots(rows=1, cols=2)
+        else:
+            figure = None
 
-            figure.append_trace(trace_train, 1, 1)
-            figure.append_trace(trace_val, 1, 2)
+        return dcc.Graph(figure=figure, id=graph_id)
 
-            figure['layout'].update(title=layout.title,
-                                    margin=layout.margin)
+    return dcc.Graph(id=graph_id)
 
-        return [
-            dcc.Graph(
-                figure=figure,
-                id="accuracy-graph"
-            )
-        ]
 
-    return [dcc.Graph(id="accuracy-graph")]
+@app.callback(Output('run-log-storage', 'children'),
+              [Input('interval-log-update', 'n_intervals')])
+def get_run_log(n_intervals):
+    t1 = time.time()
+
+    names = ['step', 'train accuracy', 'val accuracy', 'train cross entropy', 'val cross entropy']
+
+    try:
+        run_log_df = pd.read_csv('run_log.csv', names=names)
+        json = run_log_df.to_json(orient='split')
+    except FileNotFoundError as error:
+        print(error + ". Please verify if the csv file generated by your model is place in the correct directory.")
+        return None
+
+    t2 = time.time()
+    print(f"\ncsv2json time: {t2-t1:.3f} sec")
+
+    return json
+
+
+@app.callback(Output('div-accuracy-graph', 'children'),
+              [Input('run-log-storage', 'children'),
+               Input('radio-display-mode-accuracy', 'value'),
+               Input('checklist-smoothing-options-accuracy', 'values'),
+               Input('slider-smoothing-accuracy', 'value')])
+def update_accuracy_graph(run_log_json, display_mode, checklist_smoothing_options, slider_smoothing):
+    figure = update_graph('accuracy-graph',
+                          'Prediction Accuracy',
+                          run_log_json,
+                          display_mode,
+                          checklist_smoothing_options,
+                          slider_smoothing)
+
+    return [figure]
 
 
 @app.callback(Output('cross-entropy-graph', 'figure'),
