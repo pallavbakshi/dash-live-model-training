@@ -1,3 +1,5 @@
 
 .idea/*
 notebooks/temp.csv
+eggs.csv
+run_log.csv
