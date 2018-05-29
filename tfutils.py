@@ -19,7 +19,6 @@ def add_eval(y,
     # Compute Cross Entropy
     cross_entropy = tf.losses.sparse_softmax_cross_entropy(
         labels=y_, logits=y)
-    cross_entropy = tf.reduce_mean(cross_entropy)
 
     return accuracy, cross_entropy
 

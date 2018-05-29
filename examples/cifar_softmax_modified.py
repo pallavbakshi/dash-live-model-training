@@ -27,6 +27,11 @@ import sys
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
+# Custom Imports
+import numpy as np
+from sklearn.model_selection import train_test_split
+from skimage.transform import rescale
+from skimage import color
 from tfutils import add_eval, write_data
 
 FLAGS = None
@@ -59,17 +64,32 @@ def main(_):
 
   ################################## MODIFIED CODE BELOW ##################################
   accuracy, cross_entropy = add_eval(y, y_)
+
+  # Generate custom CIFAR10 images
+  print("Starting to generate CIFAR10 images.")
+  (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+  x_train_gray = color.rgb2gray(np.moveaxis(x_train, 1, 3))
+  rescaled = rescale(np.moveaxis(x_train_gray, 0, 2), 28 / 32)
+  x_train_vec = rescaled.reshape(50000, -1)
+  X_train, X_val, y_train, y_val = train_test_split(x_train_vec, np.squeeze(y_train), test_size=0.1, random_state=42)
+  print("Finished generating CIFAR10 images.")
+
   ################################## MODIFIED CODE ABOVE ##################################
 
   sess = tf.InteractiveSession()
   tf.global_variables_initializer().run()
   # Train
-  for i in range(10001):
-    batch_xs, batch_ys = mnist.train.next_batch(100)
-
+  for i in range(20001):
     ################################## MODIFIED CODE BELOW ##################################
-    batch = mnist.train.next_batch(100)
-    batch_val = mnist.validation.next_batch(100)
+    start_train = i * 100 % y_train.shape[0]
+    end_train = start_train + 100
+
+    start_val = i * 100 % y_val.shape[0]
+    end_val = start_val + 100
+
+    batch = (X_train[start_train:end_train], y_train[start_train:end_train])
+    batch_val = (X_val[start_val:end_val], y_val[start_val:end_val])
+
     feed_dict_train = {x: batch[0], y_: batch[1]}
     feed_dict_val = {x: batch_val[0], y_: batch_val[1]}
     # Writes data into run log csv file
@@ -80,17 +100,16 @@ def main(_):
         feed_dict_val=feed_dict_val,
         step=i
     )
+    sess.run(train_step, feed_dict={x: batch[0], y_: batch[1]})
     ################################## MODIFIED CODE ABOVE ##################################
-
-    sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 
   # Test trained model
   correct_prediction = tf.equal(tf.argmax(y, 1), y_)
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   print(sess.run(
       accuracy, feed_dict={
-          x: mnist.test.images,
-          y_: mnist.test.labels
+          x: X_val,
+          y_: y_val
       }))
 
 

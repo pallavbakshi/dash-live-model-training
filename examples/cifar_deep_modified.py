@@ -33,7 +33,12 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
 # Modified Import
+import numpy as np
+from sklearn.model_selection import train_test_split
+from skimage.transform import rescale
+from skimage import color
 from tfutils import write_data
+from sklearn.preprocessing import OneHotEncoder
 
 FLAGS = None
 
@@ -135,13 +140,33 @@ def main(_):
   correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
+  ################################## MODIFIED CODE BELOW ##################################
+  # Generate custom CIFAR10 images
+  print("Starting to generate CIFAR10 images.")
+  (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+  x_train_gray = color.rgb2gray(np.moveaxis(x_train, 1, 3))
+  rescaled = rescale(np.moveaxis(x_train_gray, 0, 2), 28 / 32)
+  x_train_vec = rescaled.reshape(50000, -1)
+  X_train, X_val, y_train, y_val = train_test_split(x_train_vec, y_train, test_size=0.1, random_state=42)
+  print("Finished generating CIFAR10 images.")
+  ################################## MODIFIED CODE ABOVE ##################################
+
   with tf.Session() as sess:
+    y_train = OneHotEncoder(sparse=False).fit_transform(y_train)
+    y_val = OneHotEncoder(sparse=False).fit_transform(y_val)
+
     sess.run(tf.global_variables_initializer())
     for i in range(10001):
-      batch = mnist.train.next_batch(50)
-
       ################################## MODIFIED CODE BELOW ##################################
-      batch_val = mnist.validation.next_batch(50)
+      start_train = i * 50 % y_train.shape[0]
+      end_train = start_train + 50
+
+      start_val = i * 50 % y_val.shape[0]
+      end_val = start_val + 50
+
+      batch = (X_train[start_train:end_train], y_train[start_train:end_train])
+      batch_val = (X_val[start_val:end_val], y_val[start_val:end_val])
+
       feed_dict_train = {x: batch[0], y_: batch[1], keep_prob: 1.0}
       feed_dict_val = {x: batch_val[0], y_: batch_val[1], keep_prob: 1.0}
       # Writes data into run log csv file
@@ -158,7 +183,7 @@ def main(_):
         train_accuracy = accuracy.eval(feed_dict={
             x: batch[0], y_: batch[1], keep_prob: 1.0})
         print('step %d, training accuracy %g' % (i, train_accuracy))
-      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.9})
 
     print('test accuracy %g' % accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
