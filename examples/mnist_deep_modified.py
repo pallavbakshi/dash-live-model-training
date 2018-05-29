@@ -29,12 +29,11 @@ from __future__ import print_function
 import argparse
 import sys
 
+import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-import tensorflow as tf
-
 # Modified Import
-from tfutils import add_eval, write_data
+from tfutils import write_data
 
 FLAGS = None
 

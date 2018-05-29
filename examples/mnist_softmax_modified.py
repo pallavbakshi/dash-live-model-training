@@ -24,9 +24,8 @@ from __future__ import print_function
 import argparse
 import sys
 
-from tensorflow.examples.tutorials.mnist import input_data
-
 import tensorflow as tf
+from tensorflow.examples.tutorials.mnist import input_data
 
 from tfutils import add_eval, write_data
 
