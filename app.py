@@ -273,8 +273,9 @@ def get_run_log(_):
 @app.callback(Output('div-step-display', 'children'),
               [Input('run-log-storage', 'children')])
 def update_div_step_display(run_log_json):
-    run_log_df = pd.read_json(run_log_json, orient='split')
-    return html.H6(f"Step: {run_log_df['step'].iloc[-1]}", style={'margin-top': '3px'})
+    if run_log_json:
+        run_log_df = pd.read_json(run_log_json, orient='split')
+        return html.H6(f"Step: {run_log_df['step'].iloc[-1]}", style={'margin-top': '3px'})
 
 
 @app.callback(Output('div-accuracy-graph', 'children'),
@@ -320,37 +321,39 @@ def update_cross_entropy_graph(run_log_json,
 @app.callback(Output('div-current-accuracy-value', 'children'),
               [Input('run-log-storage', 'children')])
 def update_div_current_accuracy_value(run_log_json):
-    run_log_df = pd.read_json(run_log_json, orient='split')
-    return [
-        html.P(
-            "Current Accuracy:",
-            style={
-                'font-weight': 'bold',
-                'margin-top': '15px',
-                'margin-bottom': '0px'
-            }
-        ),
-        html.Div(f"Training: {run_log_df['train accuracy'].iloc[-1]:.4f}"),
-        html.Div(f"Validation: {run_log_df['val accuracy'].iloc[-1]:.4f}")
-    ]
+    if run_log_json:
+        run_log_df = pd.read_json(run_log_json, orient='split')
+        return [
+            html.P(
+                "Current Accuracy:",
+                style={
+                    'font-weight': 'bold',
+                    'margin-top': '15px',
+                    'margin-bottom': '0px'
+                }
+            ),
+            html.Div(f"Training: {run_log_df['train accuracy'].iloc[-1]:.4f}"),
+            html.Div(f"Validation: {run_log_df['val accuracy'].iloc[-1]:.4f}")
+        ]
 
 
 @app.callback(Output('div-current-cross-entropy-value', 'children'),
               [Input('run-log-storage', 'children')])
 def update_div_current_cross_entropy_value(run_log_json):
-    run_log_df = pd.read_json(run_log_json, orient='split')
-    return [
-        html.P(
-            "Current Loss:",
-            style={
-                'font-weight': 'bold',
-                'margin-top': '15px',
-                'margin-bottom': '0px'
-            }
-        ),
-        html.Div(f"Training: {run_log_df['train cross entropy'].iloc[-1]:.4f}"),
-        html.Div(f"Validation: {run_log_df['val cross entropy'].iloc[-1]:.4f}")
-    ]
+    if run_log_json:
+        run_log_df = pd.read_json(run_log_json, orient='split')
+        return [
+            html.P(
+                "Current Loss:",
+                style={
+                    'font-weight': 'bold',
+                    'margin-top': '15px',
+                    'margin-bottom': '0px'
+                }
+            ),
+            html.Div(f"Training: {run_log_df['train cross entropy'].iloc[-1]:.4f}"),
+            html.Div(f"Validation: {run_log_df['val cross entropy'].iloc[-1]:.4f}")
+        ]
 
 
 external_css = [
