@@ -59,16 +59,19 @@ def div_graph(name):
             ),
 
             html.Div([
-                html.P("Display mode:", style={'font-weight': 'bold', 'margin-bottom': '0px'}),
+                html.P("Plot Display mode:", style={'font-weight': 'bold', 'margin-bottom': '0px'}),
 
                 dcc.RadioItems(
                     options=[
-                        {'label': 'Overlapping Plots', 'value': 'overlap'},
-                        {'label': 'Separate Plots', 'value': 'separate'}
+                        {'label': 'Overlapping', 'value': 'overlap'},
+                        {'label': 'Separate (Vertical)', 'value': 'separate_vertical'},
+                        {'label': 'Separate (Horizontal)', 'value': 'separate_horizontal'}
                     ],
                     value='overlap',
                     id=f'radio-display-mode-{name}'
-                )
+                ),
+
+                html.Div(id=f'div-current-{name}-value')
             ]),
         ],
             className="two columns"
@@ -95,18 +98,28 @@ app.layout = html.Div([
     # Body
     html.Div([
         html.Div([
-            dcc.Dropdown(
-                id='dropdown-interval-control',
-                options=[
-                    {'label': 'No Updates', 'value': 'no'},
-                    {'label': 'Slow Updates', 'value': 'slow'},
-                    {'label': 'Regular Updates', 'value': 'regular'},
-                    {'label': 'Fast Updates', 'value': 'fast'}
-                ],
-                value='regular',
-                clearable=False,
-                searchable=False
+            html.Div([
+                dcc.Dropdown(
+                    id='dropdown-interval-control',
+                    options=[
+                        {'label': 'No Updates', 'value': 'no'},
+                        {'label': 'Slow Updates', 'value': 'slow'},
+                        {'label': 'Regular Updates', 'value': 'regular'},
+                        {'label': 'Fast Updates', 'value': 'fast'}
+                    ],
+                    value='regular',
+                    clearable=False,
+                    searchable=False
+                )
+            ],
+                className='ten columns'
+            ),
+
+            html.Div(
+                id="div-step-display",
+                className="two columns"
             )
+
         ],
             id='div-interval-control',
             className='row'
@@ -190,11 +203,21 @@ def update_graph(graph_id,
             name='Validation'
         )
 
-        if display_mode == 'separate':
+        if display_mode == 'separate_vertical':
             figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
 
             figure.append_trace(trace_train, 1, 1)
             figure.append_trace(trace_val, 2, 1)
+
+            figure['layout'].update(title=layout.title,
+                                    margin=layout.margin,
+                                    height=layout.height)
+
+        elif display_mode == 'separate_horizontal':
+            figure = tools.make_subplots(rows=1, cols=2, print_grid=False)
+
+            figure.append_trace(trace_train, 1, 1)
+            figure.append_trace(trace_val, 1, 2)
 
             figure['layout'].update(title=layout.title,
                                     margin=layout.margin,
@@ -247,6 +270,13 @@ def get_run_log(_):
     return json
 
 
+@app.callback(Output('div-step-display', 'children'),
+              [Input('run-log-storage', 'children')])
+def update_div_step_display(run_log_json):
+    run_log_df = pd.read_json(run_log_json, orient='split')
+    return html.H6(f"Step: {run_log_df['step'].iloc[-1]}", style={'margin-top': '3px'})
+
+
 @app.callback(Output('div-accuracy-graph', 'children'),
               [Input('run-log-storage', 'children'),
                Input('radio-display-mode-accuracy', 'value'),
@@ -285,6 +315,42 @@ def update_cross_entropy_graph(run_log_json,
                           checklist_smoothing_options,
                           slider_smoothing)
     return [figure]
+
+
+@app.callback(Output('div-current-accuracy-value', 'children'),
+              [Input('run-log-storage', 'children')])
+def update_div_current_accuracy_value(run_log_json):
+    run_log_df = pd.read_json(run_log_json, orient='split')
+    return [
+        html.P(
+            "Current Accuracy:",
+            style={
+                'font-weight': 'bold',
+                'margin-top': '15px',
+                'margin-bottom': '0px'
+            }
+        ),
+        html.Div(f"Training: {run_log_df['train accuracy'].iloc[-1]:.4f}"),
+        html.Div(f"Validation: {run_log_df['val accuracy'].iloc[-1]:.4f}")
+    ]
+
+
+@app.callback(Output('div-current-cross-entropy-value', 'children'),
+              [Input('run-log-storage', 'children')])
+def update_div_current_cross_entropy_value(run_log_json):
+    run_log_df = pd.read_json(run_log_json, orient='split')
+    return [
+        html.P(
+            "Current Loss:",
+            style={
+                'font-weight': 'bold',
+                'margin-top': '15px',
+                'margin-bottom': '0px'
+            }
+        ),
+        html.Div(f"Training: {run_log_df['train cross entropy'].iloc[-1]:.4f}"),
+        html.Div(f"Validation: {run_log_df['val cross entropy'].iloc[-1]:.4f}")
+    ]
 
 
 external_css = [
