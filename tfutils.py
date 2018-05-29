@@ -51,7 +51,7 @@ def write_data(accuracy,
             os.remove(filename)
 
     # Then we start logging inside the file
-    elif step % 5 == 0:
+    elif step % step_range == 0:
         train_accuracy = accuracy.eval(feed_dict=feed_dict_train)
         val_accuracy = accuracy.eval(feed_dict=feed_dict_val)
 
