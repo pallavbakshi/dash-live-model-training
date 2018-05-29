@@ -7,7 +7,7 @@ def add_eval(y,
              y_):
     """
     Add evaluation metrics.
-    :param y: The predicted labels
+    :param y: The predicted y, aka logits
     :param y_: The true labels
     :return: Add the accuracy and cross entropy to the tensorflow graph and return them
     """
