@@ -36,7 +36,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 from tfutils import write_data
 
 FLAGS = None
-
+DATA = "FASHION"
 
 def deepnn(x):
   """deepnn builds the graph for a deep net for classifying digits.
@@ -118,7 +118,12 @@ def bias_variable(shape):
 
 def main(_):
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
+  if DATA == "MNIST":
+    mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
+  elif DATA == "FASHION":
+      mnist = input_data.read_data_sets('data/fashion',
+                                       source_url='http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/',
+                                       one_hot=True)
 
   # Create the model
   x = tf.placeholder(tf.float32, [None, 784])

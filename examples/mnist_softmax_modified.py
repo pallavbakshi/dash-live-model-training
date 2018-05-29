@@ -30,12 +30,15 @@ from tensorflow.examples.tutorials.mnist import input_data
 from tfutils import add_eval, write_data
 
 FLAGS = None
-
+DATA = "FASHION"
 
 def main(_):
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir)
-
+  if DATA == "MNIST":
+    mnist = input_data.read_data_sets(FLAGS.data_dir)
+  elif DATA == "FASHION":
+      mnist = input_data.read_data_sets('data/fashion',
+                                       source_url='http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/')
   # Create the model
   x = tf.placeholder(tf.float32, [None, 784])
   W = tf.Variable(tf.zeros([784, 10]))

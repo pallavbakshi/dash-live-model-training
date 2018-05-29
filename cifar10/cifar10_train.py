@@ -40,6 +40,7 @@ from datetime import datetime
 import time
 
 import tensorflow as tf
+import numpy as np
 
 import cifar10
 from tfutils import add_eval, write_data
@@ -76,7 +77,7 @@ def train():
     loss = cifar10.loss(logits, labels)
 
     ###################################### ADDED CODE BELOW #############################################
-    accuracy, cross_entropy = add_eval(logits, labels)
+    accuracy, cross_entropy = add_eval(logits, tf.cast(labels, tf.int64))
     ###################################### ADDED CODE ABOVE #############################################
 
     # Build a Graph that trains the model with one batch of examples and
@@ -118,6 +119,16 @@ def train():
             log_device_placement=FLAGS.log_device_placement)) as mon_sess:
       while not mon_sess.should_stop():
         mon_sess.run(train_op)
+        feed_dict_train = {x: batch[0], y_: batch[1]}
+        feed_dict_val = {x: batch_val[0], y_: batch_val[1]}
+        # Writes data into run log csv file
+        write_data(
+            accuracy=accuracy,
+            cross_entropy=cross_entropy,
+            feed_dict_train=feed_dict_train,
+            feed_dict_val=feed_dict_val,
+            step=i
+        )
 
 
 def main(argv=None):  # pylint: disable=unused-argument
