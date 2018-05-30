@@ -174,7 +174,6 @@ def main(_):
 
     sess.run(tf.global_variables_initializer())
     for i in range(20001):
-      ################################## MODIFIED CODE BELOW ##################################
       start_train = i * 50 % y_train.shape[0]
       end_train = start_train + 50
 
@@ -194,7 +193,6 @@ def main(_):
         feed_dict_val=feed_dict_val,
         step=i
       )
-      ################################## MODIFIED CODE ABOVE ##################################
 
       if i % 100 == 0:
         train_accuracy = accuracy.eval(feed_dict={

@@ -39,11 +39,23 @@ FLAGS = None
 
 def main(_):
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir)
+  print("Starting to generate CIFAR10 images.")
+  (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+  x_train = np.moveaxis(x_train, 1, 3) / 255.  # Normalize values
+  x_train_vec = x_train.reshape(50000, -1)
+
+  y_train = np.squeeze(y_train)
+  y_test = np.squeeze(y_test)
+
+  x_test = np.moveaxis(x_test, 1, 3) / 255.  # Normalize values
+  x_test_vec = x_test.reshape(10000, -1)
+
+  X_train, X_val, y_train, y_val = train_test_split(x_train_vec, y_train, test_size=0.1, random_state=42)
+  print("Finished generating CIFAR10 images.")
 
   # Create the model
-  x = tf.placeholder(tf.float32, [None, 784])
-  W = tf.Variable(tf.zeros([784, 10]))
+  x = tf.placeholder(tf.float32, [None, 3*32*32])
+  W = tf.Variable(tf.zeros([3*32*32, 10]))
   b = tf.Variable(tf.zeros([10]))
   y = tf.matmul(x, W) + b
 
@@ -62,25 +74,13 @@ def main(_):
   cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=y_, logits=y)
   train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
-  ################################## MODIFIED CODE BELOW ##################################
+  # Add accuracy and cross entropy to the graph using util function
   accuracy, cross_entropy = add_eval(y, y_)
-
-  # Generate custom CIFAR10 images
-  print("Starting to generate CIFAR10 images.")
-  (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-  x_train_gray = color.rgb2gray(np.moveaxis(x_train, 1, 3))
-  rescaled = rescale(np.moveaxis(x_train_gray, 0, 2), 28 / 32)
-  x_train_vec = rescaled.reshape(50000, -1)
-  X_train, X_val, y_train, y_val = train_test_split(x_train_vec, np.squeeze(y_train), test_size=0.1, random_state=42)
-  print("Finished generating CIFAR10 images.")
-
-  ################################## MODIFIED CODE ABOVE ##################################
 
   sess = tf.InteractiveSession()
   tf.global_variables_initializer().run()
   # Train
   for i in range(20001):
-    ################################## MODIFIED CODE BELOW ##################################
     start_train = i * 100 % y_train.shape[0]
     end_train = start_train + 100
 
@@ -101,15 +101,14 @@ def main(_):
         step=i
     )
     sess.run(train_step, feed_dict={x: batch[0], y_: batch[1]})
-    ################################## MODIFIED CODE ABOVE ##################################
 
   # Test trained model
   correct_prediction = tf.equal(tf.argmax(y, 1), y_)
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   print(sess.run(
       accuracy, feed_dict={
-          x: X_val,
-          y_: y_val
+          x: x_test_vec,
+          y_: y_test
       }))
 
 
