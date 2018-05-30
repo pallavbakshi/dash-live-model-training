@@ -13,10 +13,15 @@
 # limitations under the License.
 # ==============================================================================
 
-"""A deep MNIST classifier using convolutional layers.
+"""A deep CIFAR10 classifier using convolutional layers.
 
-See extensive documentation at
+Code taken from the official tensorflow guide:
 https://www.tensorflow.org/get_started/mnist/pros
+
+The architecture comes from Keras CIFAR10 CNN example:
+https://github.com/keras-team/keras/blob/master/examples/cifar10_cnn.py
+
+
 """
 # Disable linter warnings to maintain consistency with tutorial.
 # pylint: disable=invalid-name
@@ -57,41 +62,55 @@ def deepnn(x):
     dropout.
   """
   # Reshape to use within a convolutional neural net.
-  # Last dimension is for "features" - there is only one here, since images are
-  # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
-  x_image = tf.reshape(x, [-1, 28, 28, 1])
+  # Last dimension is for "features" - there is three here, since images are
+  # rgb -- it would be 1 for a grayscale image, 4 for RGBA, etc.
+  x_image = tf.reshape(x, [-1, 32, 32, 3])
 
-  # First convolutional layer - maps one grayscale image to 32 feature maps.
-  W_conv1 = weight_variable([5, 5, 1, 32])
+  # Convolutional layers 1 and 2 - maps 3-color image to 32 feature maps.
+  W_conv1 = weight_variable([3, 3, 3, 32])  # 3x3 filters
   b_conv1 = bias_variable([32])
   h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 
+  W_conv2 = weight_variable([3, 3, 32, 32])
+  b_conv2 = bias_variable([32])
+  h_conv2 = tf.nn.relu(conv2d(h_conv1, W_conv2) + b_conv2)
+
   # Pooling layer - downsamples by 2X.
-  h_pool1 = max_pool_2x2(h_conv1)
-
-  # Second convolutional layer -- maps 32 feature maps to 64.
-  W_conv2 = weight_variable([5, 5, 32, 64])
-  b_conv2 = bias_variable([64])
-  h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
-
-  # Second pooling layer.
   h_pool2 = max_pool_2x2(h_conv2)
 
-  # Fully connected layer 1 -- after 2 round of downsampling, our 28x28 image
-  # is down to 7x7x64 feature maps -- maps this to 1024 features.
-  W_fc1 = weight_variable([7 * 7 * 64, 1024])
-  b_fc1 = bias_variable([1024])
+  # Dropout
+  h_pool2_drop = tf.nn.dropout(h_pool2, 0.75)
 
-  h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
-  h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+  # Convolutional layers 3 and 4 - maps 32 feature maps to 64.
+  W_conv3 = weight_variable([3, 3, 32, 64])  # 3x3 filters
+  b_conv3 = bias_variable([64])
+  h_conv3 = tf.nn.relu(conv2d(h_pool2_drop, W_conv3) + b_conv3)
+
+  W_conv4 = weight_variable([3, 3, 64, 64])  # 3x3 filters
+  b_conv4 = bias_variable([64])
+  h_conv4 = tf.nn.relu(conv2d(h_conv3, W_conv4) + b_conv4)
+
+  # Second pooling layer.
+  h_pool4 = max_pool_2x2(h_conv4)
+
+  # Dropout
+  h_pool4_drop = tf.nn.dropout(h_pool4, 0.75)
+
+  # Fully connected layer 1 -- after 2 round of downsampling, our 32x32 image
+  # is down to 8x8x64 feature maps -- maps this to 512 features.
+  W_fc1 = weight_variable([8 * 8 * 64, 512])
+  b_fc1 = bias_variable([512])
+
+  h_pool4_flat = tf.reshape(h_pool4_drop, [-1, 8*8*64])
+  h_fc1 = tf.nn.relu(tf.matmul(h_pool4_flat, W_fc1) + b_fc1)
 
   # Dropout - controls the complexity of the model, prevents co-adaptation of
   # features.
   keep_prob = tf.placeholder(tf.float32)
   h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-  # Map the 1024 features to 10 classes, one for each digit
-  W_fc2 = weight_variable([1024, 10])
+  # Map the 512 features to 10 classes, one for each digit
+  W_fc2 = weight_variable([512, 10])
   b_fc2 = bias_variable([10])
 
   y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
@@ -123,10 +142,19 @@ def bias_variable(shape):
 
 def main(_):
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
+  print("Starting to generate CIFAR10 images.")
+  (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+  x_train = np.moveaxis(x_train, 1, 3) / 255.  # Normalize values
+  x_train_vec = x_train.reshape(50000, -1)
+
+  x_test = np.moveaxis(x_test, 1, 3) / 255.  # Normalize values
+  x_test_vec = x_test.reshape(10000, -1)
+
+  X_train, X_val, y_train, y_val = train_test_split(x_train_vec, y_train, test_size=0.1, random_state=42)
+  print("Finished generating CIFAR10 images.")
 
   # Create the model
-  x = tf.placeholder(tf.float32, [None, 784])
+  x = tf.placeholder(tf.float32, [None, 32*32*3])
 
   # Define loss and optimizer
   y_ = tf.placeholder(tf.float32, [None, 10])
@@ -135,28 +163,17 @@ def main(_):
   y_conv, keep_prob = deepnn(x)
 
   cross_entropy = tf.reduce_mean(
-      tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
-  train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+      tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_, logits=y_conv))
+  train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)  # RMS is used in keras example, Adam is better
   correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-  ################################## MODIFIED CODE BELOW ##################################
-  # Generate custom CIFAR10 images
-  print("Starting to generate CIFAR10 images.")
-  (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
-  x_train_gray = color.rgb2gray(np.moveaxis(x_train, 1, 3))
-  rescaled = rescale(np.moveaxis(x_train_gray, 0, 2), 28 / 32)
-  x_train_vec = rescaled.reshape(50000, -1)
-  X_train, X_val, y_train, y_val = train_test_split(x_train_vec, y_train, test_size=0.1, random_state=42)
-  print("Finished generating CIFAR10 images.")
-  ################################## MODIFIED CODE ABOVE ##################################
 
   with tf.Session() as sess:
     y_train = OneHotEncoder(sparse=False).fit_transform(y_train)
     y_val = OneHotEncoder(sparse=False).fit_transform(y_val)
 
     sess.run(tf.global_variables_initializer())
-    for i in range(10001):
+    for i in range(20001):
       ################################## MODIFIED CODE BELOW ##################################
       start_train = i * 50 % y_train.shape[0]
       end_train = start_train + 50
@@ -183,10 +200,10 @@ def main(_):
         train_accuracy = accuracy.eval(feed_dict={
             x: batch[0], y_: batch[1], keep_prob: 1.0})
         print('step %d, training accuracy %g' % (i, train_accuracy))
-      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.9})
+      train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
     print('test accuracy %g' % accuracy.eval(feed_dict={
-        x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+        x: x_test_vec, y_: y_test, keep_prob: 1.0}))
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
