@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""A very simple MNIST classifier.
+"""A very simple CIFAR10 classifier.
 
-See extensive documentation at
+This code was modified from the MNIST beginner tutorial found here:
 https://www.tensorflow.org/get_started/mnist/beginners
+
+Accuracy on test set is 26.74%. Simple ConvNet models can achieve over 70% accuracy:
+https://github.com/keras-team/keras/blob/master/examples/cifar10_cnn.py
+
+Whether the low accuracy is caused by an error or the simplicity of the classifier is unknown. It is encouraged to
+report errors within this code.
 """
 from __future__ import absolute_import
 from __future__ import division
