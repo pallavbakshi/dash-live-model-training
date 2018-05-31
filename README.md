@@ -1,4 +1,9 @@
 # Dash Live Model Training Viewer
+This is a demo of the Dash interactive Python framework developed by [Plotly](https://plot.ly/).
+
+Dash abstracts away all of the technologies and protocols required to build an interactive web-based application and is a simple and effective way to bind a user interface around your Python code.
+
+To learn more check out our [documentation](https://plot.ly/dash).
 
 ## What does the app do?
 For the majority of Deep Learning models, it is extremely helpful to keep track of the accuracy and loss as it is training. At the moment, the best application to do that is [Tensorboard](https://www.tensorflow.org/programmers_guide/summaries_and_tensorboard), which is a collection of visualization tools (metrics plots, image examples, graph representation, weight histogram, etc.) useful to debug and monitor the training of your model.
@@ -14,7 +19,7 @@ At the moment, the logging only works for iterative Tensorflow models. We are pl
 
 ## How to use the app
 
-The demo app shows how the viewer works by simulating the training process of a few basic models. To use it with your own model, following these steps:
+The demo app shows how the viewer works by simulating the training process of a few basic models. If you want to use the full app with your own model, follow theses steps:
 
 1. Import the helper functions, `add_eval()` and `write_data()` from `tfutils.py`. 
 2. Use `add_eval()` to add the accuracy and cross-entropy operations in your tensorflow graph, if they are not already present. It takes as input `y_`, the Tensor containing the true target, aka labels, and `y`, which contains the predicted targets, aka logits. It will return two variables, accuracy and cross_entropy. 
@@ -22,4 +27,9 @@ The demo app shows how the viewer works by simulating the training process of a 
 4. At every step, after running the session once, call `write_data()` to write the data in the log file. Use the feed dicts, _accuracy_ and _cross_entropy_ generated in the previous steps as input. If the output log file is renamed, update the _LOGFILE_ variable inside `app.py` as well to reflect the changes.
 5. Run `app.py`, and open the given link.
 
-Make sure that you correctly clone the repo with all the required libraries. You also need the latest version of Tensorflow and Sci-kit Learn. 
+Make sure that you correctly clone the repo with all the required libraries. You also need the latest version of Tensorflow and Sci-kit Learn.
+
+## Screenshots
+![screenshot1](screenshots/screenshot1.png)
+
+![screenshot2](screenshots/screenshot2.png)

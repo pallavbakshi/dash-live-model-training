@@ -25,6 +25,7 @@ if 'DYNO' in os.environ:
 else:
     demo_mode = False
 
+
 def div_graph(name):
     """Generates an html Div containing graph and control options for smoothing and display, given the name"""
     return html.Div([
