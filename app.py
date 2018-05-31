@@ -322,7 +322,7 @@ def update_interval_log_update(interval_rate):
               [State('dropdown-demo-dataset', 'value'),
                State('dropdown-simulation-model', 'value')])
 def simulate_run(n_intervals, demo_dataset, simulation_model):
-    if simulation_model and demo_dataset:
+    if simulation_model and demo_dataset and n_intervals > 0:
         step = n_intervals * 5
         run_logs = data_dict[simulation_model][demo_dataset]
 
