@@ -176,7 +176,13 @@ app.layout = html.Div([
             className="row"
         ),
 
-        html.Div(dcc.Markdown(demo_md), className='row')
+        html.Div(
+            dcc.Markdown(demo_md, className='ten columns'),
+            style={
+                'margin': '20px'
+            },
+            className='row'
+        )
     ],
         className="container"
     )
