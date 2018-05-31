@@ -8,6 +8,8 @@ import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 from plotly import tools
 
+from demo_utils import demo_components, demo_callbacks
+
 LOGFILE = 'examples/run_log.csv'
 DEMO_MODE = True
 
@@ -20,11 +22,6 @@ if 'DYNO' in os.environ:
     app.scripts.append_script({
         'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
     })
-
-if DEMO_MODE is True:
-    # Markdown files
-    with open('demo.md', 'r') as file:
-        demo_md = file.read()
 
 
 def div_graph(name):
@@ -139,53 +136,8 @@ app.layout = html.Div([
         div_graph('accuracy'),
         div_graph('cross-entropy'),
 
-        ########################## DEMO COMPONENTS BELOW ####################################
-        # Hidden Div that will store the result of simulating a model run
-        html.Div(id='storage-simulated-run', style={'display': 'none'}),
-
-        # An interval that increments the simulation step count at a fixed time interval
-        dcc.Interval(
-            id='interval-simulated-step',
-            interval=125,  # Updates every 100 milliseconds, i.e. every step takes 25 ms
-            n_intervals=0
-        ),
-
-        html.Div([
-            dcc.Dropdown(
-                id='dropdown-demo-dataset',
-                options=[
-                    {'label': 'CIFAR 10', 'value': 'cifar'},
-                    {'label': 'MNIST', 'value': 'mnist'},
-                    {'label': 'Fashion MNIST', 'value': 'fashion'}
-                ],
-                placeholder="Select a demo dataset",
-                searchable=False,
-                className='five columns',
-            ),
-
-            dcc.Dropdown(
-                id='dropdown-simulation-model',
-                options=[
-                    {'label': '1-Layer Neural Net', 'value': 'softmax'},
-                    {'label': 'Simple Conv Net', 'value': 'cnn'}
-                ],
-                placeholder="Select Model to Simulate",
-                searchable=False,
-                className='five columns',
-            )
-
-        ],
-            className="row"
-        ),
-
-        html.Div(
-            dcc.Markdown(demo_md, className='ten columns'),
-            style={
-                'margin': '20px'
-            },
-            className='row'
-        )
-        ########################## DEMO COMPONENTS ABOVE ####################################
+        # Extract the demo components if we are in demo mode
+        *demo_components(DEMO_MODE)
     ],
         className="container"
     )
@@ -287,6 +239,9 @@ def update_graph(graph_id,
     return dcc.Graph(id=graph_id)
 
 
+demo_callbacks(app, DEMO_MODE)
+
+
 @app.callback(Output('interval-log-update', 'interval'),
               [Input('dropdown-interval-control', 'value')])
 def update_interval_log_update(interval_rate):
@@ -304,73 +259,21 @@ def update_interval_log_update(interval_rate):
         return 24 * 60 * 60 * 1000
 
 
-##################################### MODIFIED FOR DEMO BELOW #####################################
-@app.server.before_first_request
-def load_demo_run_logs():
-    global data_dict, demo_md
+if not DEMO_MODE:
+    @app.callback(Output('run-log-storage', 'children'),
+                  [Input('interval-log-update', 'n_intervals')])
+    def get_run_log(_):
+        names = ['step', 'train accuracy', 'val accuracy', 'train cross entropy', 'val cross entropy']
 
-    names = ['step', 'train accuracy', 'val accuracy', 'train cross entropy', 'val cross entropy']
-
-    data_dict = {
-        'softmax': {
-            'cifar': pd.read_csv('demo_run_logs/cifar_softmax_run_log.csv', names=names),
-            'mnist': pd.read_csv('demo_run_logs/mnist_softmax_run_log.csv', names=names),
-            'fashion': pd.read_csv('demo_run_logs/fashion_softmax_run_log.csv', names=names)
-        },
-
-        'cnn': {
-            'cifar': pd.read_csv('demo_run_logs/cifar_cnn_run_log.csv', names=names),
-            'mnist': pd.read_csv('demo_run_logs/mnist_cnn_run_log.csv', names=names),
-            'fashion': pd.read_csv('demo_run_logs/fashion_cnn_run_log.csv', names=names)
-        }
-    }
-
-
-@app.callback(Output('storage-simulated-run', 'children'),
-              [Input('interval-simulated-step', 'n_intervals')],
-              [State('dropdown-demo-dataset', 'value'),
-               State('dropdown-simulation-model', 'value')])
-def simulate_run(n_intervals, demo_dataset, simulation_model):
-    if simulation_model and demo_dataset and n_intervals > 0:
-        step = n_intervals * 5
-        run_logs = data_dict[simulation_model][demo_dataset]
-
-        run_below_steps = run_logs[run_logs['step'] <= step]
-        json = run_below_steps.to_json(orient='split')
+        try:
+            run_log_df = pd.read_csv(LOGFILE, names=names)
+            json = run_log_df.to_json(orient='split')
+        except FileNotFoundError as error:
+            print(error)
+            print("Please verify if the csv file generated by your model is placed in the correct directory.")
+            return None
 
         return json
-
-
-@app.callback(Output('interval-simulated-step', 'n_intervals'),
-              [Input('dropdown-demo-dataset', 'value'),
-               Input('dropdown-simulation-model', 'value')])
-def reset_interval_simulated_step(*_):
-    return 0
-
-
-@app.callback(Output('run-log-storage', 'children'),
-              [Input('interval-log-update', 'n_intervals')],
-              [State('storage-simulated-run', 'children')])
-def get_run_log(_, simulated_run):
-    if simulate_run:
-        return simulated_run
-##################################### MODIFIED FOR DEMO ABOVE #####################################
-
-# COMMENTED OUT FOR DEMO
-# @app.callback(Output('run-log-storage', 'children'),
-#               [Input('interval-log-update', 'n_intervals')])
-# def get_run_log(_):
-#     names = ['step', 'train accuracy', 'val accuracy', 'train cross entropy', 'val cross entropy']
-#
-#     try:
-#         run_log_df = pd.read_csv(LOGFILE, names=names)
-#         json = run_log_df.to_json(orient='split')
-#     except FileNotFoundError as error:
-#         print(error)
-#         print("Please verify if the csv file generated by your model is placed in the correct directory.")
-#         return None
-#
-#     return json
 
 
 @app.callback(Output('div-step-display', 'children'),
