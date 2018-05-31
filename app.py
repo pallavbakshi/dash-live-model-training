@@ -21,9 +21,10 @@ if 'DYNO' in os.environ:
         'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
     })
 
-# Markdown files
-with open('demo.md', 'r') as file:
-    demo_md = file.read()
+if DEMO_MODE is True:
+    # Markdown files
+    with open('demo.md', 'r') as file:
+        demo_md = file.read()
 
 
 def div_graph(name):
@@ -138,7 +139,7 @@ app.layout = html.Div([
         div_graph('accuracy'),
         div_graph('cross-entropy'),
 
-        ### DEMO SECTION ###
+        ########################## DEMO COMPONENTS BELOW ####################################
         # Hidden Div that will store the result of simulating a model run
         html.Div(id='storage-simulated-run', style={'display': 'none'}),
 
@@ -172,6 +173,7 @@ app.layout = html.Div([
                 searchable=False,
                 className='five columns',
             )
+
         ],
             className="row"
         ),
@@ -183,6 +185,7 @@ app.layout = html.Div([
             },
             className='row'
         )
+        ########################## DEMO COMPONENTS ABOVE ####################################
     ],
         className="container"
     )
@@ -284,6 +287,24 @@ def update_graph(graph_id,
     return dcc.Graph(id=graph_id)
 
 
+@app.callback(Output('interval-log-update', 'interval'),
+              [Input('dropdown-interval-control', 'value')])
+def update_interval_log_update(interval_rate):
+    if interval_rate == 'fast':
+        return 500
+
+    elif interval_rate == 'regular':
+        return 1000
+
+    elif interval_rate == 'slow':
+        return 5 * 1000
+
+    # Refreshes every 24 hours
+    elif interval_rate == 'no':
+        return 24 * 60 * 60 * 1000
+
+
+##################################### MODIFIED FOR DEMO BELOW #####################################
 @app.server.before_first_request
 def load_demo_run_logs():
     global data_dict, demo_md
@@ -305,24 +326,6 @@ def load_demo_run_logs():
     }
 
 
-@app.callback(Output('interval-log-update', 'interval'),
-              [Input('dropdown-interval-control', 'value')])
-def update_interval_log_update(interval_rate):
-    if interval_rate == 'fast':
-        return 500
-
-    elif interval_rate == 'regular':
-        return 1000
-
-    elif interval_rate == 'slow':
-        return 5 * 1000
-
-    # Refreshes every 24 hours
-    elif interval_rate == 'no':
-        return 24 * 60 * 60 * 1000
-
-
-##################################### MODIFIED FOR DEMO BELOW #####################################
 @app.callback(Output('storage-simulated-run', 'children'),
               [Input('interval-simulated-step', 'n_intervals')],
               [State('dropdown-demo-dataset', 'value'),
