@@ -15,7 +15,7 @@ Cross Entropy Loss is the value that you are trying to minimize with your model.
 ## What does the app do?
 For the majority of Deep Learning models, it is extremely helpful to keep track of the accuracy and loss as it is training. At the moment, the best application to do that is the Tensorboard, which is a collection of visualization tools (metrics plots, image examples, graph representation, weight histogram, etc.) useful to debug and monitor the training of your model.
 
-_Dash's Live Model Training Viewer_ is a compact visualization app that monitors core metrics of your __Tensorflow model__ during training. It complements the Tensorboard by offering the following:
+_Dash's Live Model Training Viewer_ is a compact visualization app that monitors core metrics of your __Tensorflow model__ during training. It complements the [Tensorboard](https://www.tensorflow.org/programmers_guide/summaries_and_tensorboard) by offering the following:
 * __Real-time visualization__: The app is designed to visualize your metrics as they are updated inside your model.
 * __Small and Lightweight__: The viewer loads a small number of important visualization, so that it loads and runs quickly.
 * __Simple to use__: For simpler tensorflow models, all you need to do is to call `add_eval` to add the accuracy and cross entropy operations in the graph, and generate a log of the metrics using `write_data`. Both functions are inside `tfutils.py`, and examples are included in the `examples` directory.
