@@ -24,7 +24,6 @@ if 'DYNO' in os.environ:
 # Markdown files
 with open('demo.md', 'r') as file:
     demo_md = file.read()
-    print(demo_md)
 
 
 def div_graph(name):
@@ -347,7 +346,6 @@ def get_run_log(_, simulated_run):
     if simulate_run:
         return simulated_run
 ##################################### MODIFIED FOR DEMO ABOVE #####################################
-
 
 # COMMENTED OUT FOR DEMO
 # @app.callback(Output('run-log-storage', 'children'),
