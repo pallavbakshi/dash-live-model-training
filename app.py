@@ -11,18 +11,19 @@ from plotly import tools
 from demo_utils import demo_components, demo_callbacks
 
 LOGFILE = 'examples/run_log.csv'
-DEMO_MODE = True
 
 app = dash.Dash(__name__)
 server = app.server
 
 
-# Custom Script for Heroku
+# Custom Script for Heroku, switch to demo mode when hosted on Heroku
 if 'DYNO' in os.environ:
     app.scripts.append_script({
         'external_url': 'https://cdn.rawgit.com/chriddyp/ca0d8f02a1659981a0ea7f013a378bbd/raw/e79f3f789517deec58f41251f7dbb6bee72c44ab/plotly_ga.js'
     })
-
+    demo_mode = True
+else:
+    demo_mode = False
 
 def div_graph(name):
     """Generates an html Div containing graph and control options for smoothing and display, given the name"""
@@ -137,7 +138,7 @@ app.layout = html.Div([
         div_graph('cross-entropy'),
 
         # Extract the demo components if we are in demo mode
-        *demo_components(DEMO_MODE)
+        *demo_components(demo_mode)
     ],
         className="container"
     )
@@ -239,7 +240,7 @@ def update_graph(graph_id,
     return dcc.Graph(id=graph_id)
 
 
-demo_callbacks(app, DEMO_MODE)
+demo_callbacks(app, demo_mode)
 
 
 @app.callback(Output('interval-log-update', 'interval'),
@@ -259,7 +260,7 @@ def update_interval_log_update(interval_rate):
         return 24 * 60 * 60 * 1000
 
 
-if not DEMO_MODE:
+if not demo_mode:
     @app.callback(Output('run-log-storage', 'children'),
                   [Input('interval-log-update', 'n_intervals')])
     def get_run_log(_):
