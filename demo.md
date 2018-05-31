@@ -7,6 +7,11 @@ At the moment, we have the following datasets:
 * __MNIST:__ 60,000 grayscale images of size 28x28. It contains handwritten digits from 0 to 9. [Link](http://yann.lecun.com/exdb/mnist/)
 * __Fashion MNIST:__ 60,000 grayscale images of size 28x28. It contains 10 commonly found fashion items. [Link](https://github.com/zalandoresearch/fashion-mnist)
 
+## What are Accuracy and Cross Entropy?
+Accuracy is the fraction of data points that were correctly classified, for the mini-batch that is used to train the model. In our case, given that each dataset has 10 different labels, an accuracy of 0.1 is equivalent to a random guess.
+
+Cross Entropy Loss is the value that you are trying to minimize with your model. It basically indicates how far off our model is from predicting the correct label every time. It is described more in depth in the [Tensorflow Tutorial](https://www.tensorflow.org/versions/r1.0/get_started/mnist/beginners#training)
+
 ## What does the app do?
 For the majority of Deep Learning models, it is extremely helpful to keep track of the accuracy and loss as it is training. At the moment, the best application to do that is the Tensorboard, which is a collection of visualization tools (metrics plots, image examples, graph representation, weight histogram, etc.) useful to debug and monitor the training of your model.
 
