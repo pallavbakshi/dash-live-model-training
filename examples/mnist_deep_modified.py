@@ -36,7 +36,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 from tfutils import write_data
 
 FLAGS = None
-DATA = "FASHION"
+DATA = "MNIST"
 
 def deepnn(x):
   """deepnn builds the graph for a deep net for classifying digits.

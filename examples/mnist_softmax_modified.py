@@ -30,7 +30,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 from tfutils import add_eval, write_data
 
 FLAGS = None
-DATA = "FASHION"
+DATA = "MNIST"
 
 def main(_):
   # Import data
