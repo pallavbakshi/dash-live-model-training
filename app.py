@@ -153,7 +153,8 @@ def update_graph(graph_id,
                  run_log_json,
                  display_mode,
                  checklist_smoothing_options,
-                 slider_smoothing):
+                 slider_smoothing,
+                 yaxis_title):
     """
     :param graph_id: ID for Dash callbacks
     :param graph_title: Displayed on layout
@@ -177,7 +178,8 @@ def update_graph(graph_id,
     if run_log_json:  # exists
         layout = go.Layout(
             title=graph_title,
-            margin=go.Margin(l=50, r=50, b=50, t=50)
+            margin=go.Margin(l=50, r=50, b=50, t=50),
+            yaxis={'title': yaxis_title}
         )
 
         run_log_df = pd.read_json(run_log_json, orient='split')
@@ -302,7 +304,8 @@ def update_accuracy_graph(run_log_json,
                           run_log_json,
                           display_mode,
                           checklist_smoothing_options,
-                          slider_smoothing)
+                          slider_smoothing,
+                          'Accuracy')
     return [figure]
 
 
@@ -322,7 +325,8 @@ def update_cross_entropy_graph(run_log_json,
                           run_log_json,
                           display_mode,
                           checklist_smoothing_options,
-                          slider_smoothing)
+                          slider_smoothing,
+                          'Loss')
     return [figure]
 
 
