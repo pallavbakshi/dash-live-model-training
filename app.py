@@ -15,7 +15,6 @@ LOGFILE = 'examples/run_log.csv'
 app = dash.Dash(__name__)
 server = app.server
 
-
 # Custom Script for Heroku, switch to demo mode when hosted on Heroku
 if 'DYNO' in os.environ:
     app.scripts.append_script({
@@ -166,6 +165,7 @@ def update_graph(graph_id,
     :param slider_smoothing: value between 0 and 1, at interval of 0.05
     :return: dcc Graph object containing the updated figures
     """
+
     def smooth(scalars, weight=0.6):
         last = scalars[0]
         smoothed = list()
@@ -297,16 +297,19 @@ def update_accuracy_graph(run_log_json,
                           display_mode,
                           checklist_smoothing_options,
                           slider_smoothing):
-    figure = update_graph('accuracy-graph',
-                          'Prediction Accuracy',
-                          'train accuracy',
-                          'val accuracy',
-                          run_log_json,
-                          display_mode,
-                          checklist_smoothing_options,
-                          slider_smoothing,
-                          'Accuracy')
-    return [figure]
+    graph = update_graph('accuracy-graph',
+                         'Prediction Accuracy',
+                         'train accuracy',
+                         'val accuracy',
+                         run_log_json,
+                         display_mode,
+                         checklist_smoothing_options,
+                         slider_smoothing,
+                         'Accuracy')
+
+    graph.figure.layout.yaxis['range'] = [0, 1]
+
+    return [graph]
 
 
 @app.callback(Output('div-cross-entropy-graph', 'children'),
@@ -318,16 +321,16 @@ def update_cross_entropy_graph(run_log_json,
                                display_mode,
                                checklist_smoothing_options,
                                slider_smoothing):
-    figure = update_graph('cross-entropy-graph',
-                          'Cross Entropy Loss',
-                          'train cross entropy',
-                          'val cross entropy',
-                          run_log_json,
-                          display_mode,
-                          checklist_smoothing_options,
-                          slider_smoothing,
-                          'Loss')
-    return [figure]
+    graph = update_graph('cross-entropy-graph',
+                         'Cross Entropy Loss',
+                         'train cross entropy',
+                         'val cross entropy',
+                         run_log_json,
+                         display_mode,
+                         checklist_smoothing_options,
+                         slider_smoothing,
+                         'Loss')
+    return [graph]
 
 
 @app.callback(Output('div-current-accuracy-value', 'children'),
