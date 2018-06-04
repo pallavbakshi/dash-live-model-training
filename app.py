@@ -210,24 +210,29 @@ def update_graph(graph_id,
         )
 
         if display_mode == 'separate_vertical':
-            figure = tools.make_subplots(rows=2, cols=1, print_grid=False)
+            figure = tools.make_subplots(rows=2,
+                                         cols=1,
+                                         print_grid=False,
+                                         shared_yaxes=True)
 
             figure.append_trace(trace_train, 1, 1)
             figure.append_trace(trace_val, 2, 1)
 
             figure['layout'].update(title=layout.title,
                                     margin=layout.margin,
-                                    height=layout.height)
+                                    scene={'domain': {'x': (0., 0.5), 'y': (0.5,1)}})
 
         elif display_mode == 'separate_horizontal':
-            figure = tools.make_subplots(rows=1, cols=2, print_grid=False)
+            figure = tools.make_subplots(rows=1,
+                                         cols=2,
+                                         shared_yaxes=True,
+                                         print_grid=False)
 
             figure.append_trace(trace_train, 1, 1)
             figure.append_trace(trace_val, 1, 2)
 
             figure['layout'].update(title=layout.title,
-                                    margin=layout.margin,
-                                    height=layout.height)
+                                    margin=layout.margin)
 
         elif display_mode == 'overlap':
             figure = go.Figure(
@@ -307,7 +312,12 @@ def update_accuracy_graph(run_log_json,
                          slider_smoothing,
                          'Accuracy')
 
-    graph.figure.layout.yaxis['range'] = [0, 1]
+    if display_mode in ['separate_horizontal', 'overlap']:
+        graph.figure.layout.yaxis['range'] = [0, 1]
+
+    else:
+        graph.figure.layout.yaxis1['range'] = [0, 1]
+        graph.figure.layout.yaxis2['range'] = [0, 1]
 
     return [graph]
 
