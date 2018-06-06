@@ -4,14 +4,14 @@ The purpose of this demo is to show what can be done with the Viewer. Therefore,
 
 To use the demo, simply choose the model and dataset for which you want to replay the training, __using the two dropdown menus immediately above__. For every dataset, we trained a simple 1-layer Neural Network, and a small Convolutional Neural Network that were taken from the official Tensorflow and Keras tutorials.
 
-At the moment, we have the following datasets:
+At the moment, the following datasets have been pre-generated:
 * __CIFAR10:__ 50,000 RGB images of size 32x32. It contains 10 common objects. [Link](https://www.cs.toronto.edu/~kriz/cifar.html)
 * __MNIST:__ 60,000 grayscale images of size 28x28. It contains handwritten digits from 0 to 9. [Link](http://yann.lecun.com/exdb/mnist/)
 * __Fashion MNIST:__ 60,000 grayscale images of size 28x28. It contains 10 commonly found fashion items. [Link](https://github.com/zalandoresearch/fashion-mnist)
 
-## What are you looking at?
-
-## What are Accuracy and Cross Entropy?
+## What am I looking at?
+The two plots, updated at the interval of your choice, shows two important metrics for training Machine Learning classifiers, i.e. Accuracy and Cross Entropy Loss. Because we feed small mini-batches of 50 examples for every iteration, you will see a lot of variation along the y-axis, which can be made smoother using the sliders. 
+ 
 Accuracy is the fraction of labels correctly classified inside the mini-batch currently used to train/validate the model. In our case, given that each dataset has 10 different labels, an accuracy of 0.1 is equivalent to a random guess, and an accuracy of 1 means the model correctly predicted every single label.
 
 Cross Entropy Loss is the value that you are trying to minimize with your model. It basically indicates how far off our model is from predicting the correct label every time. It is described more in depth in the [Tensorflow Tutorial](https://www.tensorflow.org/versions/r1.0/get_started/mnist/beginners#training).
