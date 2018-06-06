@@ -30,6 +30,6 @@ The demo app shows how the viewer works by simulating the training process of a 
 Make sure that you correctly clone the repo with all the required libraries. You also need the latest version of Tensorflow and Sci-kit Learn.
 
 ## Screenshots
-![screenshot1](screenshots/screenshot1.png)
+![screenshot1](images/screenshot1.png)
 
-![screenshot2](screenshots/screenshot2.png)
+![screenshot2](images/screenshot2.png)

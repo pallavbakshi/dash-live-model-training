@@ -51,11 +51,15 @@ def demo_components(demo_mode):
             ),
 
             html.Div(
-                dcc.Markdown(demo_md, className='ten columns'),
+                html.Div([
+                    dcc.Markdown(demo_md, className='markdown'),
+                ],
+                    className='ten columns'
+                ),
+                className='row',
                 style={
                     'margin': '20px'
-                },
-                className='row'
+                }
             )
             ########################## DEMO COMPONENTS ABOVE ####################################
         ]

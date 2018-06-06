@@ -22,7 +22,7 @@ if 'DYNO' in os.environ:
     })
     demo_mode = True
 else:
-    demo_mode = False
+    demo_mode = True
 
 
 def div_graph(name):
@@ -312,12 +312,13 @@ def update_accuracy_graph(run_log_json,
                          slider_smoothing,
                          'Accuracy')
 
-    if display_mode in ['separate_horizontal', 'overlap']:
-        graph.figure.layout.yaxis['range'] = [0, 1]
+    if graph:
+        if display_mode in ['separate_horizontal', 'overlap']:
+            graph.figure.layout.yaxis['range'] = [0, 1]
 
-    else:
-        graph.figure.layout.yaxis1['range'] = [0, 1]
-        graph.figure.layout.yaxis2['range'] = [0, 1]
+        else:
+            graph.figure.layout.yaxis1['range'] = [0, 1]
+            graph.figure.layout.yaxis2['range'] = [0, 1]
 
     return [graph]
 
@@ -385,7 +386,8 @@ external_css = [
     "https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css",  # Normalize the CSS
     "https://fonts.googleapis.com/css?family=Open+Sans|Roboto"  # Fonts
     "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
-    "https://rawgit.com/xhlulu/0acba79000a3fd1e6f552ed82edb8a64/raw/dash_template.css"
+    "https://cdn.rawgit.com/xhlulu/0acba79000a3fd1e6f552ed82edb8a64/raw/dash_template.css",
+    "https://rawgit.com/plotly/dash-live-model-training/master/custom_styles.css"
 ]
 
 for css in external_css:
