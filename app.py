@@ -22,7 +22,7 @@ if 'DYNO' in os.environ:
     })
     demo_mode = True
 else:
-    demo_mode = True
+    demo_mode = False
 
 
 def div_graph(name):
