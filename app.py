@@ -316,13 +316,15 @@ def update_accuracy_graph(run_log_json,
                          slider_smoothing,
                          'Accuracy')
 
-    if graph:
+    try:
         if display_mode in ['separate_horizontal', 'overlap']:
             graph.figure.layout.yaxis['range'] = [0, 1]
-
         else:
             graph.figure.layout.yaxis1['range'] = [0, 1]
             graph.figure.layout.yaxis2['range'] = [0, 1]
+
+    except AttributeError:
+        pass
 
     return [graph]
 
