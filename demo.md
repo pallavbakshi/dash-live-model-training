@@ -2,7 +2,7 @@
 
 The purpose of this demo is to show what can be done with the Viewer. Therefore, the trainings shown above are displayed using pre-generated data. To try with your own data, please visit the [project repo](https://github.com/plotly/dash-live-model-training). 
 
-To use the demo, simply choose the model and dataset for which you want to replay the training, __using the two dropdown menus immediately above__. For every dataset, we trained a simple 1-layer Neural Network, and a small Convolutional Neural Network that were taken from the official [Tensorflow](https://www.tensorflow.org/tutorials/layers) and [Keras](https://github.com/keras-team/keras/blob/master/examples/cifar10_cnn.py) tutorials.
+To use the demo, simply choose the model and dataset for which you want to replay the training, __using the two dropdown menus at the top of the page__. For every dataset, we trained a simple 1-layer Neural Network, and a small Convolutional Neural Network that were taken from the official [Tensorflow](https://www.tensorflow.org/tutorials/layers) and [Keras](https://github.com/keras-team/keras/blob/master/examples/cifar10_cnn.py) tutorials.
 
 At the moment, the following datasets have been pre-generated:
 * __CIFAR10:__ 50,000 RGB images of size 32x32. It contains 10 common objects. [Link](https://www.cs.toronto.edu/~kriz/cifar.html)

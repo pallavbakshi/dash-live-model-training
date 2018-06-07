@@ -8,7 +8,7 @@ import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 from plotly import tools
 
-from demo_utils import demo_components, demo_callbacks
+from demo_utils import demo_components, demo_callbacks, demo_explanation
 
 LOGFILE = 'examples/run_log.csv'
 
@@ -101,6 +101,9 @@ app.layout = html.Div([
 
     # Body
     html.Div([
+        # Extract the demo components if we are in demo mode
+        *demo_components(demo_mode),
+
         html.Div([
             dcc.Dropdown(
                 id='dropdown-interval-control',
@@ -137,8 +140,8 @@ app.layout = html.Div([
         div_graph('accuracy'),
         div_graph('cross-entropy'),
 
-        # Extract the demo components if we are in demo mode
-        *demo_components(demo_mode)
+        # Explanation for the demo version of the app
+        demo_explanation(demo_mode)
     ],
         className="container"
     )

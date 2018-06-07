@@ -4,64 +4,62 @@ import pandas as pd
 from dash.dependencies import Input, Output, State
 
 
-def demo_components(demo_mode):
+def demo_explanation(demo_mode):
     if demo_mode:
         # Markdown files
         with open('demo.md', 'r') as file:
             demo_md = file.read()
 
+        return html.Div(
+            html.Div([
+                dcc.Markdown(demo_md, className='markdown'),
+            ],
+                className='ten columns'
+            ),
+            className='row',
+            style={
+                'margin': '20px'
+            }
+        )
+
+
+def demo_components(demo_mode):
+    if demo_mode:
         return [
-            ########################## DEMO COMPONENTS BELOW ####################################
             # Hidden Div that will store the result of simulating a model run
             html.Div(id='storage-simulated-run', style={'display': 'none'}),
 
-            # An interval that increments the simulation step count at a fixed time interval
+            # Increment the simulation step count at a fixed time interval
             dcc.Interval(
                 id='interval-simulated-step',
                 interval=125,  # Updates every 100 milliseconds, i.e. every step takes 25 ms
                 n_intervals=0
             ),
 
-            html.Div([
-                dcc.Dropdown(
-                    id='dropdown-demo-dataset',
-                    options=[
-                        {'label': 'CIFAR 10', 'value': 'cifar'},
-                        {'label': 'MNIST', 'value': 'mnist'},
-                        {'label': 'Fashion MNIST', 'value': 'fashion'}
-                    ],
-                    placeholder="Select a demo dataset",
-                    searchable=False,
-                    className='five columns',
-                ),
+            html.Div(className="row", style={'margin-bottom':'8px'}, children=[
+                html.Div(className="ten columns", children=[
+                    html.Div(className="six columns", children=dcc.Dropdown(
+                        id='dropdown-demo-dataset',
+                        options=[
+                            {'label': 'CIFAR 10', 'value': 'cifar'},
+                            {'label': 'MNIST', 'value': 'mnist'},
+                            {'label': 'Fashion MNIST', 'value': 'fashion'}
+                        ],
+                        placeholder="Select a demo dataset",
+                        searchable=False
+                    )),
 
-                dcc.Dropdown(
-                    id='dropdown-simulation-model',
-                    options=[
-                        {'label': '1-Layer Neural Net', 'value': 'softmax'},
-                        {'label': 'Simple Conv Net', 'value': 'cnn'}
-                    ],
-                    placeholder="Select Model to Simulate",
-                    searchable=False,
-                    className='five columns',
-                )
-
-            ],
-                className="row"
-            ),
-
-            html.Div(
-                html.Div([
-                    dcc.Markdown(demo_md, className='markdown'),
-                ],
-                    className='ten columns'
-                ),
-                className='row',
-                style={
-                    'margin': '20px'
-                }
-            )
-            ########################## DEMO COMPONENTS ABOVE ####################################
+                    html.Div(className="six columns", children=dcc.Dropdown(
+                        id='dropdown-simulation-model',
+                        options=[
+                            {'label': '1-Layer Neural Net', 'value': 'softmax'},
+                            {'label': 'Simple Conv Net', 'value': 'cnn'}
+                        ],
+                        placeholder="Select Model to Simulate",
+                        searchable=False
+                    ))
+                ])
+            ])
         ]
 
     else:
