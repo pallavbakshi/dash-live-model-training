@@ -58,7 +58,9 @@ def demo_components(demo_mode):
                         placeholder="Select Model to Simulate",
                         searchable=False
                     ))
-                ])
+                ]),
+
+                html.Div(id="div-total-step-count", className="two columns")
             ])
         ]
 
@@ -114,3 +116,9 @@ def demo_callbacks(app, demo_mode):
         def get_run_log(_, simulated_run):
             if simulate_run:
                 return simulated_run
+
+        @app.callback(Output('div-total-step-count', 'children'),
+                      [Input('dropdown-demo-dataset', 'value')])
+        def total_step_count(dataset_name):
+            dataset = data_dict['softmax'][dataset_name]
+            return html.H6(f"Total Steps: {dataset['step'].iloc[-1]}", style={'margin-top': '3px'})
