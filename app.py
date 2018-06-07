@@ -22,7 +22,7 @@ if 'DYNO' in os.environ:
     })
     demo_mode = True
 else:
-    demo_mode = False
+    demo_mode = True
 
 
 def div_graph(name):
@@ -39,8 +39,8 @@ def div_graph(name):
 
                 dcc.Checklist(
                     options=[
-                        {'label': 'Training', 'value': 'train'},
-                        {'label': 'Validation', 'value': 'val'}
+                        {'label': ' Training', 'value': 'train'},
+                        {'label': ' Validation', 'value': 'val'}
                     ],
                     values=[],
                     id=f'checklist-smoothing-options-{name}'
@@ -56,6 +56,7 @@ def div_graph(name):
                     step=0.05,
                     marks={i / 5: i / 5 for i in range(0, 6)},
                     value=0.6,
+                    updatemode='drag',
                     id=f'slider-smoothing-{name}'
                 )
             ],
@@ -67,9 +68,9 @@ def div_graph(name):
 
                 dcc.RadioItems(
                     options=[
-                        {'label': 'Overlapping', 'value': 'overlap'},
-                        {'label': 'Separate (Vertical)', 'value': 'separate_vertical'},
-                        {'label': 'Separate (Horizontal)', 'value': 'separate_horizontal'}
+                        {'label': ' Overlapping', 'value': 'overlap'},
+                        {'label': ' Separate (Vertical)', 'value': 'separate_vertical'},
+                        {'label': ' Separate (Horizontal)', 'value': 'separate_horizontal'}
                     ],
                     value='overlap',
                     id=f'radio-display-mode-{name}'
